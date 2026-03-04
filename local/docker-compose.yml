@@ -1,0 +1,23 @@
+services:
+
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: drdb
+      POSTGRES_USER: druser
+      POSTGRES_PASSWORD: drpass
+    ports:
+      - "5432:5432"
+
+  api:
+    build: ../app
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: drdb
+      DB_USER: druser
+      DB_PASSWORD: drpass
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
