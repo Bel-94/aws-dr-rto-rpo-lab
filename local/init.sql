@@ -1,0 +1,1 @@
+--“first boot script” that tells Postgres:“When you create this database for the first time, create the items table automatically.”
