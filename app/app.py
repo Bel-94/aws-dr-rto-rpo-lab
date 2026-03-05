@@ -19,7 +19,7 @@ def health():
     try:
         conn = get_conn()
         conn.close()
-        return {"status": "ok"}
+        return {"status": "ok", "service": "dr-api"}
     except Exception as e:
         return {"status": "db_down", "error": str(e)}, 500
 
@@ -30,7 +30,7 @@ def create_item():
     cur = conn.cursor()
 
     cur.execute(
-        "INSERT INTO items(name) VALUES(%s) RETURNING id, name;",
+        "INSERT INTO items(name) VALUES(%s) RETURNING id, name, NOW()",
         (name,)
     )
 
@@ -40,7 +40,7 @@ def create_item():
     cur.close()
     conn.close()
 
-    return jsonify({"id": row[0], "name": row[1]})
+    return jsonify({"id": row[0], "name": row[1], "created_at": str(row[2])})
 
 
 @app.route("/items")

@@ -6,3 +6,11 @@ local/.env
 __pycache__/
 *.pyc
 
+# terraform (for later)
+#*.tfstate
+#*.tfstate.*
+#.terraform/
+#.terraform.lock.hcl
+
+# misc
+#.DS_Store
