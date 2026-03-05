@@ -8,15 +8,18 @@ services:
       POSTGRES_PASSWORD: drpass
     ports:
       - "5432:5432"
+    #Postgres automatically runs any .sql scripts inside the local folder only on first initialization
+    volumes: 
+    - ./init.sql:/docker-entrypoint-initdb.d/init.sql  
 
   api:
     build: ../app
     environment:
       DB_HOST: db
       DB_PORT: 5432
-      DB_NAME: drdb
-      DB_USER: druser
-      DB_PASSWORD: drpass
+      DB_NAME: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "3000:3000"
     depends_on:
