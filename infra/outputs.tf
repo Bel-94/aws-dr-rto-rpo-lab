@@ -52,5 +52,22 @@ output "cloudwatch_log_group_name" {
   description = "CloudWatch log group name for the app"
   value       = aws_cloudwatch_log_group.app.name
 }
+
+#db outputs
+output "db_endpoint" {
+  description = "RDS endpoint"
+  value       = aws_db_instance.postgres.address
+}
+
+output "db_name" {
+  description = "Database name"
+  value       = aws_db_instance.postgres.db_name
+}
+
+output "db_secret_arn" {
+  description = "Secrets Manager ARN for DB credentials"
+  value       = aws_secretsmanager_secret.db_credentials.arn
+}
+
 #These output values can be used for; checking the AWS console, referencing resources, wiring up ECS, ALB, and RDS
 #You can only access them after terraform apply

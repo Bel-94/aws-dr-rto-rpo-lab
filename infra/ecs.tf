@@ -34,6 +34,29 @@ resource "aws_ecs_task_definition" "app" {
         {
           name  = "PORT"
           value = tostring(var.app_port)
+        },
+        {
+          name  = "DB_HOST"
+          value = aws_db_instance.postgres.address
+        },
+        {
+          name  = "DB_PORT"
+          value = tostring(var.db_port)
+        },
+        {
+          name  = "DB_NAME"
+          value = var.db_name
+        },
+        {
+          name  = "DB_USER"
+          value = var.db_username
+        }
+      ]
+
+      secrets = [
+        {
+          name      = "DB_PASSWORD"
+          valueFrom = "${aws_secretsmanager_secret.db_credentials.arn}:password::"
         }
       ]
 
@@ -47,10 +70,6 @@ resource "aws_ecs_task_definition" "app" {
       }
     }
   ])
-
-  tags = {
-    Name = "${local.name_prefix}-task-def"
-  }
 }
 
 #ecs service
