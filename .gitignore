@@ -7,10 +7,12 @@ __pycache__/
 *.pyc
 
 # terraform (for later)
-#*.tfstate
-#*.tfstate.*
-#.terraform/
-#.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+infra/terraform.tfvars
+*.tfvars
 
 # misc
 #.DS_Store
