@@ -34,7 +34,7 @@ resource "aws_security_group" "app" {
   vpc_id      = aws_vpc.this.id
 
   ingress {
-    description     = "App traffic from ALB"  #This means only the ALB can send traffic to the app on port 3000.
+    description     = "App traffic from ALB" #This means only the ALB can send traffic to the app on port 3000.
     from_port       = 3000
     to_port         = 3000
     protocol        = "tcp"
@@ -61,7 +61,7 @@ resource "aws_security_group" "db" {
   vpc_id      = aws_vpc.this.id
 
   ingress {
-    description     = "Postgres from ECS app"  #This means that the database only accepts connections from the ECS app security group.
+    description     = "Postgres from ECS app" #This means that the database only accepts connections from the ECS app security group.
     from_port       = 5432
     to_port         = 5432
     protocol        = "tcp"
