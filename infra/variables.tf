@@ -32,3 +32,29 @@ variable "private_db_subnet_cidrs" {
   description = "CIDR blocks for private DB subnets"
   type        = list(string)
 }
+
+#ECS task settings
+variable "app_port" {
+  description = "Port the app listens on"
+  type        = number
+  default     = 3000
+}
+
+variable "container_cpu" {
+  description = "CPU units for the ECS task"
+  type        = number
+  default     = 256
+}
+
+variable "container_memory" {
+  description = "Memory for the ECS task in MiB"
+  type        = number
+  default     = 512
+}
+
+variable "desired_count" {
+  description = "Number of ECS tasks to run"
+  type        = number
+  default     = 1
+}
+
