@@ -230,7 +230,7 @@ ECS Fargate Service (Flask API containers)
 Amazon RDS PostgreSQL
 ```
 
-
+![Architecture Diagram](images/baseline-architecture.png)
 
 
 This architecture resembles real-world production systems and provides the foundation for testing **disaster recovery scenarios**.
