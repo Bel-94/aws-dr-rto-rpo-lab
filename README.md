@@ -122,21 +122,148 @@ This application will later be used to test:
 
 ---
 
-## Next Steps (Upcoming Phases)
-
 ### Phase 2 — Infrastructure as Code (Terraform)
 
-Provision AWS infrastructure:
+In this phase, the application was deployed to **AWS using Terraform**, transforming the local baseline into a **production-style cloud architecture**.
 
-- VPC
-- Public and private subnets
-- Security groups
-- Application load balancer
-- ECS service
-- RDS PostgreSQL database
+All infrastructure is provisioned using **Infrastructure as Code (IaC)** to ensure the environment is **reproducible, version controlled, and easy to rebuild during disaster recovery scenarios**.
 
 ---
 
+## Infrastructure Components
+
+The following AWS resources were provisioned using Terraform.
+
+### Networking
+
+- **VPC** to isolate the application network
+- **Public subnets** for internet-facing components
+- **Private subnets** for application and database layers
+- **Internet Gateway** to allow inbound internet traffic
+- **Route tables** to control network traffic between layers
+
+This setup follows a common cloud security pattern where sensitive resources remain inside **private networks**.
+
+---
+
+### Security
+
+Security groups were configured to enforce **least privilege access**:
+
+**ALB Security Group**
+- Allows inbound HTTP traffic from the internet
+
+**Application Security Group**
+- Allows traffic only from the load balancer
+
+**Database Security Group**
+- Allows PostgreSQL access only from the application layer
+
+This ensures the **database is never publicly accessible**.
+
+---
+
+### Load Balancing
+
+An **Application Load Balancer (ALB)** was deployed to:
+
+- distribute incoming traffic to the application containers
+- provide health checks
+- serve as the public entry point to the system
+
+Health checks monitor the API endpoint:
+
+```bash
+/health
+```
+
+This allows the load balancer to automatically detect unhealthy containers.
+
+---
+
+### Containerized Application
+
+The application is deployed using **Amazon ECS with AWS Fargate**, which allows running containers without managing servers.
+
+Key components include:
+
+- **ECS Cluster**
+- **Task Definition**
+- **Fargate Service**
+- **Application container running the Flask API**
+
+The Docker image is stored in **Amazon Elastic Container Registry (ECR)**.
+
+This setup provides a **serverless container platform** where AWS manages compute capacity and container orchestration.
+
+---
+
+### Database Layer
+
+The backend database runs on **Amazon RDS for PostgreSQL**.
+
+Key characteristics:
+
+- deployed in **private subnets**
+- accessible only from the application containers
+- supports automated backups
+- designed to support later **disaster recovery experiments**
+
+This database stores the **stateful data** used for measuring **Recovery Point Objective (RPO)** during failure simulations.
+
+---
+
+## Resulting Architecture (AWS)
+
+The deployed cloud architecture now follows a **three-tier pattern**:
+
+```bash
+Internet
+│
+▼
+Application Load Balancer
+│
+▼
+ECS Fargate Service (Flask API containers)
+│
+▼
+Amazon RDS PostgreSQL
+```
+
+![Architecture Diagram](images/baseline-architecture.png)
+
+
+This architecture resembles real-world production systems and provides the foundation for testing **disaster recovery scenarios**.
+
+---
+
+## Why Terraform Was Used
+
+Terraform enables:
+
+- **Version-controlled infrastructure**
+- **Automated environment rebuilds**
+- **Consistent deployments**
+- **Faster disaster recovery testing**
+
+In later phases, this will allow entire environments to be **destroyed and recreated to simulate recovery scenarios** and measure **actual RTO values**.
+
+---
+
+## Outcome of Phase 2
+
+At the end of this phase:
+
+- The application runs on **AWS ECS Fargate**
+- Traffic flows through an **Application Load Balancer**
+- Data is stored in **Amazon RDS PostgreSQL**
+- Infrastructure can be recreated **fully using Terraform**
+
+The system is now ready for **observability and disaster recovery experiments**.
+
+---
+
+## Next Steps (Upcoming Phases)
 ### Phase 3 — Observability
 
 Introduce monitoring and logging:
