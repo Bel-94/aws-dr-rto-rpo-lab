@@ -69,5 +69,16 @@ output "db_secret_arn" {
   value       = aws_secretsmanager_secret.db_credentials.arn
 }
 
+#alb outputs
+output "alb_dns_name" {
+  description = "DNS name of the Application Load Balancer"
+  value       = aws_lb.app.dns_name
+}
+
+output "alb_target_group_arn" {
+  description = "ARN of the ALB target group"
+  value       = aws_lb_target_group.app.arn
+}
+
 #These output values can be used for; checking the AWS console, referencing resources, wiring up ECS, ALB, and RDS
 #You can only access them after terraform apply

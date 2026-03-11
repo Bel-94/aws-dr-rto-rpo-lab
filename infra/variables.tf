@@ -79,3 +79,22 @@ variable "db_instance_class" {
   type        = string
 }
 
+#alarm threshold variables
+variable "alb_5xx_threshold" {
+  description = "Threshold for ALB 5xx errors alarm"
+  type        = number
+  default     = 5
+}
+
+variable "rds_cpu_threshold" {
+  description = "Threshold for RDS CPU utilization alarm"
+  type        = number
+  default     = 80
+}
+
+variable "rds_connections_threshold" {
+  description = "Threshold for RDS database connections alarm"
+  type        = number
+  default     = 20
+}
+

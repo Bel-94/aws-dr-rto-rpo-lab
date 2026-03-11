@@ -86,13 +86,21 @@ resource "aws_ecs_service" "app" {
     assign_public_ip = false
   }
 
+  load_balancer {
+    target_group_arn = aws_lb_target_group.app.arn
+    container_name   = "app"
+    container_port   = var.app_port
+  }
+
+  depends_on = [
+    aws_cloudwatch_log_group.app,
+    aws_lb_listener.http
+  ]
+
   tags = {
     Name = "${local.name_prefix}-ecs-service"
   }
 
-  depends_on = [
-    aws_cloudwatch_log_group.app
-  ]
 }
 
 
