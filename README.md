@@ -263,17 +263,89 @@ The system is now ready for **observability and disaster recovery experiments**.
 
 ---
 
-## Next Steps (Upcoming Phases)
 ### Phase 3 — Observability
 
-Introduce monitoring and logging:
+In this phase, observability is introduced to better understand how the system behaves in production and during failure scenarios.
 
-- CloudWatch logs
-- health checks
-- application metrics
+Observability is critical for **disaster recovery experiments**, because it allows us to measure system health, detect failures quickly, and observe how long recovery processes take.
+
+The focus in this phase is on **logging, monitoring, and health visibility** using AWS-native tools.
 
 ---
 
+## CloudWatch Logs
+
+Application logs from the ECS containers are sent to **Amazon CloudWatch Logs**.
+
+This allows us to:
+
+- monitor application behavior in real time
+- troubleshoot errors during deployment
+- inspect logs when simulating failures
+- verify successful API requests and database operations
+
+CloudWatch provides a centralized logging system where logs from containers can be searched and analyzed.
+
+![CloudWatch Logs from ECS container](images/ecs-logs.jpeg)
+
+
+---
+
+## Health Checks
+
+Health checks ensure that the application is **responding correctly** and help detect failures automatically.
+
+The **Application Load Balancer (ALB)** continuously checks the API endpoint:
+
+If the container stops responding or returns an unhealthy status:
+
+- the load balancer will mark the task as **unhealthy**
+- ECS can automatically replace the failing container
+
+This mechanism is essential for maintaining **high availability** in containerized workloads.
+
+![ALB Target Group Health Check (Healthy)](images/alb-health-status.png)
+
+---
+
+## Application Metrics
+
+Metrics provide insight into the performance and behavior of the system.
+
+Using **CloudWatch metrics**, we can monitor:
+
+- request traffic through the load balancer
+- container health and task status
+- system availability
+- potential error spikes
+
+These metrics will be especially useful in later phases when measuring **Recovery Time Objective (RTO)** during simulated outages.
+
+![CloudWatch Metrics graph](images/cloudwatch-metrics.jpeg)
+
+---
+
+## Why Observability Matters for Disaster Recovery
+
+Observability enables us to measure the effectiveness of disaster recovery strategies.
+
+By combining:
+
+- logs
+- metrics
+- health checks
+
+we can accurately determine:
+
+- how quickly failures are detected
+- how long systems take to recover
+- whether any data loss occurred
+
+This information will be used in later phases to evaluate **RTO and RPO tradeoffs** during disaster recovery simulations.
+
+---
+
+## Next Steps (Upcoming Phases)
 ### Phase 4 — Disaster Recovery Scenarios
 
 Test and document:
