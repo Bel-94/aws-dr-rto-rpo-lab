@@ -98,3 +98,9 @@ variable "rds_connections_threshold" {
   default     = 20
 }
 
+#db_snapshot arn variable
+variable "source_snapshot_arn" {
+  description = "The ARN of the RDS snapshot in the source region"
+  type        = string
+}
+

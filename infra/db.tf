@@ -57,7 +57,10 @@ resource "aws_db_instance" "postgres" {
   skip_final_snapshot = true
   deletion_protection = false
 
-  backup_retention_period = 7
+  backup_retention_period  = 7
+  backup_window            = "02:00-03:00"
+  copy_tags_to_snapshot    = true
+  delete_automated_backups = true
 
   tags = {
     Name = "${local.name_prefix}-postgres"
