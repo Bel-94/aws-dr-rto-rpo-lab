@@ -10,10 +10,10 @@ resource "aws_lb" "dr" {
 resource "aws_lb_target_group" "dr" {
   provider = aws.dr
 
-  name     = "${local.name_prefix}-dr-tg"
-  port     = 3000
-  protocol = "HTTP"
-  vpc_id   = aws_vpc.dr.id
+  name        = "${local.name_prefix}-dr-tg"
+  port        = 3000
+  protocol    = "HTTP"
+  vpc_id      = aws_vpc.dr.id
   target_type = "ip"
 }
 

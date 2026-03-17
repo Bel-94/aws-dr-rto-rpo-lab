@@ -6,7 +6,8 @@ resource "random_password" "db_password" {
 
 #Create a secret container in AWS Secrets Manager.
 resource "aws_secretsmanager_secret" "db_credentials" {
-  name = "${local.name_prefix}-db-credentials"
+  name                    = "${local.name_prefix}-db-credentials"
+  recovery_window_in_days = 0
 
   tags = {
     Name = "${local.name_prefix}-db-secret"

@@ -9,7 +9,7 @@ resource "aws_db_instance" "dr_restore" {
   provider = aws.dr
 
   identifier          = "${local.name_prefix}-dr-postgres"
-  snapshot_identifier = aws_db_snapshot_copy.dr_copy.id
+  snapshot_identifier = var.snapshot_id
 
   instance_class = "db.t3.micro"
   engine         = "postgres"

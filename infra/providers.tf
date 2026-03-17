@@ -1,4 +1,5 @@
 provider "aws" {
+  alias  = "primary"
   region = var.aws_region
 
   default_tags {
@@ -14,3 +15,4 @@ provider "aws" {
   alias  = "dr"
   region = "us-west-2"
 }
+

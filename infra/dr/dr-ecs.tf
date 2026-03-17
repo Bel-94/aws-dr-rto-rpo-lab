@@ -9,7 +9,7 @@ resource "aws_ecs_service" "dr_service" {
 
   name            = "${local.name_prefix}-dr-service"
   cluster         = aws_ecs_cluster.dr.id
-  task_definition = aws_ecs_task_definition.app.arn
+  task_definition = aws_ecs_task_definition.dr.arn
   desired_count   = 1
   launch_type     = "FARGATE"
 

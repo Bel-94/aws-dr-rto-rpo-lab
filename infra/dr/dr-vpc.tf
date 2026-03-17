@@ -25,7 +25,7 @@ resource "aws_subnet" "dr_public" {
 
   vpc_id                  = aws_vpc.dr.id
   cidr_block              = cidrsubnet("10.10.0.0/16", 8, count.index)
-  availability_zone       = "us-east-2${["a","b"][count.index]}"
+  availability_zone       = "us-west-2${["a", "b"][count.index]}"
   map_public_ip_on_launch = true
 
   tags = {
@@ -39,7 +39,7 @@ resource "aws_subnet" "dr_private_app" {
 
   vpc_id            = aws_vpc.dr.id
   cidr_block        = cidrsubnet("10.10.0.0/16", 8, count.index + 10)
-  availability_zone = "us-east-2${["a","b"][count.index]}"
+  availability_zone = "us-west-2${["a", "b"][count.index]}"
 
   tags = {
     Name = "${local.name_prefix}-dr-private-app-${count.index}"
@@ -52,7 +52,7 @@ resource "aws_subnet" "dr_private_db" {
 
   vpc_id            = aws_vpc.dr.id
   cidr_block        = cidrsubnet("10.10.0.0/16", 8, count.index + 20)
-  availability_zone = "us-east-2${["a","b"][count.index]}"
+  availability_zone = "us-west-2${["a", "b"][count.index]}"
 
   tags = {
     Name = "${local.name_prefix}-dr-private-db-${count.index}"
