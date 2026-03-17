@@ -344,7 +344,7 @@ we can accurately determine:
 This information will be used in later phases to evaluate **RTO and RPO tradeoffs** during disaster recovery simulations.
 
 ---
-**You need a second region for the disaster recovery to work, and hence:**
+##### **You need a second region for the disaster recovery to work, and hence:**
 ---
 
 ## Multi-Region Deployment (Disaster Recovery Expansion)
