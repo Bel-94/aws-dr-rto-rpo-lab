@@ -344,6 +344,89 @@ we can accurately determine:
 This information will be used in later phases to evaluate **RTO and RPO tradeoffs** during disaster recovery simulations.
 
 ---
+**You need a second region for the disaster recovery to work, and hence:**
+---
+
+## Multi-Region Deployment (Disaster Recovery Expansion)
+
+To extend the disaster recovery capabilities of this architecture, a **second AWS region (Disaster Recovery region)** was introduced.
+
+This allows the system to support **regional failover scenarios**, which are critical for minimizing downtime in case the primary region becomes unavailable.
+
+---
+
+### Regions Used
+
+- **Primary Region:** us-east-1  
+- **Disaster Recovery Region:** us-west-2  
+
+---
+
+### Implementation Approach
+
+The multi-region setup was implemented using **Terraform provider aliases**, enabling infrastructure deployment across multiple regions from the same codebase.
+
+```hcl
+provider "aws" {
+  alias  = "primary"
+  region = "us-east-1"
+}
+
+provider "aws" {
+  alias  = "dr"
+  region = "us-west-2"
+}
+```
+
+---
+### A dedicated DR module was created to define all resources in the secondary region:
+
+```hcl
+module "dr" {
+  source = "./dr"
+
+  providers = {
+    aws = aws.dr
+  }
+}
+```
+
+---
+
+### DR Region Infrastructure
+
+The following components were successfully deployed in the DR region:
+
+- VPC with public and private subnets  
+- Internet Gateway and route tables  
+- Security groups (ALB, application, database)  
+- Application Load Balancer  
+- ECS Cluster and Fargate service  
+- RDS PostgreSQL instance (restored from snapshot)  
+- CloudWatch log group  
+
+This mirrors the primary region setup and prepares the system for **failover testing**.
+
+---
+
+### Key Outcome
+
+- Infrastructure is now running in **two regions**  
+- The system is **disaster recovery ready at the infrastructure level**  
+- Foundation established for:
+  - failover simulations  
+  - RTO (Recovery Time Objective) measurement  
+  - RPO (Recovery Point Objective) evaluation  
+
+---
+
+### Key Learning
+
+Implementing multi-region infrastructure highlighted the importance of:
+
+- Correct use of **Terraform provider aliases**  
+- Proper **module-to-provider mapping**  
+- Understanding how **Terraform state interacts with provider configurations**
 
 ## Next Steps (Upcoming Phases)
 ### Phase 4 — Disaster Recovery Scenarios
