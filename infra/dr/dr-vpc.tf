@@ -58,3 +58,40 @@ resource "aws_subnet" "dr_private_db" {
     Name = "${local.name_prefix}-dr-private-db-${count.index}"
   }
 }
+
+resource "aws_route_table" "dr_private_app" {
+  provider = aws.dr
+  vpc_id   = aws_vpc.dr.id
+
+  tags = {
+    Name = "${local.name_prefix}-dr-private-app-rt"
+  }
+}
+
+resource "aws_route_table_association" "dr_private_app" {
+  provider       = aws.dr
+  count          = 2
+  subnet_id      = aws_subnet.dr_private_app[count.index].id
+  route_table_id = aws_route_table.dr_private_app.id
+}
+
+resource "aws_route_table" "dr_public" {
+  provider = aws.dr
+  vpc_id   = aws_vpc.dr.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.dr.id
+  }
+
+  tags = {
+    Name = "${local.name_prefix}-dr-public-rt"
+  }
+}
+
+resource "aws_route_table_association" "dr_public" {
+  provider       = aws.dr
+  count          = 2
+  subnet_id      = aws_subnet.dr_public[count.index].id
+  route_table_id = aws_route_table.dr_public.id
+}

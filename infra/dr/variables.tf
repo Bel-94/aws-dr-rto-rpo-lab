@@ -35,6 +35,12 @@ variable "db_username" {
   type        = string
 }
 
+variable "db_password" {
+  description = "Database password"
+  type        = string
+  sensitive   = true
+}
+
 variable "secret_arn" {
   description = "ARN of the Secrets Manager secret for DB credentials"
   type        = string

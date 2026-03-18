@@ -11,7 +11,7 @@ resource "aws_ecs_task_definition" "dr" {
   container_definitions = jsonencode([
     {
       name      = "app"
-      image     = var.ecr_image_url
+      image     = "${aws_ecr_repository.dr_app.repository_url}:latest"
       essential = true
 
       portMappings = [
@@ -33,7 +33,7 @@ resource "aws_ecs_task_definition" "dr" {
       secrets = [
         {
           name      = "DB_PASSWORD"
-          valueFrom = "${var.secret_arn}:password::"
+          valueFrom = "${aws_secretsmanager_secret.dr_db_credentials.arn}:password::"
         }
       ]
 

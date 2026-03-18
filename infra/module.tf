@@ -12,6 +12,7 @@ module "dr" {
   secret_arn         = aws_secretsmanager_secret.db_credentials.arn
   db_name            = var.db_name
   db_username        = var.db_username
+  db_password        = random_password.db_password.result
   db_port            = var.db_port
   container_cpu      = var.container_cpu
   container_memory   = var.container_memory

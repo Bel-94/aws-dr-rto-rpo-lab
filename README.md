@@ -428,16 +428,336 @@ Implementing multi-region infrastructure highlighted the importance of:
 - Proper **module-to-provider mapping**  
 - Understanding how **Terraform state interacts with provider configurations**
 
-## Next Steps (Upcoming Phases)
 ### Phase 4 — Disaster Recovery Scenarios
 
-Test and document:
+#### Strategy 1: Backup and Restore
 
-- RDS backup and restore
+This is the simplest and most cost-effective DR strategy. The system is recovered by restoring a database snapshot in the DR region and redeploying the application.
+
+---
+
+## Simulation Steps
+
+1. Inserted pre-disaster data into primary RDS (us-east-1)
+2. Took a manual RDS snapshot: `dr-rto-test-snapshot`
+3. Inserted post-snapshot items to simulate data that would be lost
+4. Scaled primary ECS service to 0 — simulating a regional disaster
+5. Copied snapshot to us-west-2: `dr-rto-test-copy`
+6. Restored new RDS instance from snapshot in us-west-2
+7. Registered new ECS task definition pointing to restored RDS
+8. Updated DR ECS service to use new task definition
+9. Verified DR ALB returned pre-disaster data
+
+---
+
+## Recovery Verification
+
+After recovery, the DR endpoint returned:
+
+```json
+[[2,"pre-disaster-item-2"],[1,"pre-disaster-item-1"]]
+```
+
+This confirmed:
+- Pre-disaster data was successfully recovered ✅
+- Post-snapshot data was lost — as expected with this strategy ✅
+
+---
+
+## RTO and RPO Results
+
+| Metric | Value | Notes |
+|--------|-------|-------|
+| **RTO** | ~30–45 minutes | Snapshot copy + RDS restore + ECS redeployment |
+| **RPO** | Time since last snapshot | Data inserted after snapshot was permanently lost |
+
+---
+
+## Recovery Breakdown
+
+| Step | Approximate Duration |
+|------|---------------------|
+| Snapshot copy (us-east-1 → us-west-2) | ~5–10 min |
+| RDS restore from snapshot | ~15–20 min |
+| ECS task definition update + redeployment | ~10–15 min |
+| **Total active RTO** | **~30–45 min** |
+
+---
+
+## Key Observations
+
+- Backup and Restore has the **highest RTO** of all DR strategies — recovery requires manual steps and waiting for RDS to restore
+- **RPO is directly tied to snapshot frequency** — the less frequent the snapshots, the more data is at risk
+- This strategy is best suited for **non-critical workloads** where some downtime and data loss is acceptable
+- All recovery steps were performed manually in this simulation — in production, these would be **automated using scripts or AWS Backup**
+
+---
+
+---
+
+#### Strategy 2: Pilot Light
+
+The Pilot Light strategy keeps a minimal version of the environment running in the DR region at all times. A **read replica** of the primary database continuously replicates data, so when disaster strikes, recovery only requires promoting the replica and scaling up the application — no snapshot copy or RDS restore needed.
+
+This results in a significantly lower RTO and near-zero RPO compared to Backup and Restore.
+
+---
+
+## Simulation Steps
+
+1. Confirmed primary RDS and ECS running in us-east-1
+2. Inserted pilot light baseline data (items 1–4) into primary RDS
+3. Created a cross-region read replica `dr-pilot-light-replica` in us-west-2
+4. Scaled DR ECS service to 0 — establishing pilot light state
+5. Inserted pilot light items (id:5, id:6) into primary while replica was replicating
+6. Scaled primary ECS to 0 — simulating a regional disaster
+7. Promoted read replica to standalone RDS instance in us-west-2
+8. Registered new ECS task definition (`:6`) pointing to promoted replica endpoint
+9. Updated DR ECS service network configuration to use public subnets with `assignPublicIp=ENABLED`
+10. Verified DR ALB returned all data including pilot light items
+
+---
+
+## Recovery Verification
+
+After recovery, the DR endpoint returned:
+
+```json
+[[6,"pilot-light-item-2"],[5,"pilot-light-item-1"],[4,"post-snapshot-lost-item-2"],[3,"post-snapshot-lost-item-1"],[2,"pre-disaster-item-2"],[1,"pre-disaster-item-1"]]
+```
+
+This confirmed:
+- All 6 items recovered — including data inserted after the replica was created ✅
+- Zero data loss — continuous replication captured everything ✅
+- RPO = 0 ✅
+
+---
+
+## RTO and RPO Results
+
+| Metric | Value | Notes |
+|--------|-------|-------|
+| **RTO** | ~15–30 minutes | Replica promotion + ECS redeployment only — no snapshot copy or RDS restore |
+| **RPO** | ~0 | Read replica was continuously in sync with primary |
+
+---
+
+## Recovery Breakdown
+
+| Step | Approximate Duration |
+|------|---------------------|
+| Read replica creation (pre-provisioned) | Already running |
+| Replica promotion to standalone DB | ~2–3 min |
+| ECS task definition update + redeployment | ~5–10 min |
+| Networking fix (assignPublicIp) + redeployment | ~5–10 min |
+| **Total estimated RTO** | **~15–30 min** |
+
+---
+
+## Key Observations
+
+- Pilot Light has a **significantly lower RTO** than Backup and Restore — the replica is already running, so no time is spent waiting for an RDS restore
+- **RPO is effectively zero** — the read replica replicates continuously, so no data is lost at the point of failure
+- The main networking challenge was that the promoted replica landed in the **default VPC**, while ECS tasks ran in the **Terraform DR VPC** — resolved by moving ECS tasks to public subnets with `assignPublicIp=ENABLED`
+- In production, replica promotion and ECS redeployment would be **automated**, reducing RTO further
+- Higher cost than Backup and Restore due to the **always-on read replica**
+
+---
+
+## Strategy Comparison So Far
+
+| Strategy | RTO | RPO | Cost | Operational Effort | Best For |
+|----------|-----|-----|------|--------------------|----------|
+| Backup and Restore | ~30–45 min | Time since last snapshot | Lowest | High — manual snapshot, restore, and redeployment | Non-critical workloads |
+| Pilot Light | ~15–30 min | ~0 | Medium | Medium — replica promotion and task definition update required | Moderate criticality workloads |
+
+---
+
+---
+
+#### Strategy 3: Warm Standby
+
+The Warm Standby strategy keeps a **fully functional but scaled-down version** of the application running in the DR region at all times. Unlike Pilot Light, both the application and database are already running — recovery only requires **scaling up** the existing environment.
+
+This results in the lowest RTO of manual DR strategies and zero RPO.
+
+---
+
+## Simulation Steps
+
+1. Confirmed primary RDS and ECS running in us-east-1
+2. Inserted warm standby baseline data (items 7–8) into primary RDS
+3. Created a cross-region read replica `dr-warm-standby-replica` in us-west-2
+4. Promoted replica to standalone DB — DR database is now writable and independent
+5. Registered new ECS task definition (`:8`) pointing to promoted replica endpoint
+6. Scaled DR ECS to 1 — warm standby state established (app running at reduced capacity)
+7. Verified DR ALB was serving all 8 items — warm standby confirmed healthy
+8. Scaled primary ECS to 0 — simulating a regional disaster
+9. Scaled DR ECS from 1 to 2 — scaling up to full production capacity
+10. Verified DR ALB returned all data at full capacity
+
+---
+
+## Recovery Verification
+
+After scaling up, the DR endpoint returned:
+
+```json
+[[8,"warm-standby-item-2"],[7,"warm-standby-item-1"],[6,"pilot-light-item-2"],[5,"pilot-light-item-1"],[4,"post-snapshot-lost-item-2"],[3,"post-snapshot-lost-item-1"],[2,"pre-disaster-item-2"],[1,"pre-disaster-item-1"]]
+```
+
+This confirmed:
+- All 8 items recovered — zero data loss ✅
+- RPO = 0 — DB was already promoted and in sync ✅
+- Recovery required only a single scale-up command ✅
+
+---
+
+## RTO and RPO Results
+
+| Metric | Value | Notes |
+|--------|-------|-------|
+| **RTO** | ~2–5 minutes | Only ECS scale-up needed — DB and app already running |
+| **RPO** | ~0 | Standalone DB was already promoted and fully synced |
+
+---
+
+## Recovery Breakdown
+
+| Step | Approximate Duration |
+|------|---------------------|
+| Read replica creation + promotion (pre-provisioned) | Already running |
+| ECS scale-up from 1 → 2 tasks | ~2–5 min |
+| **Total active RTO** | **~2–5 min** |
+
+---
+
+## Key Observations
+
+- Warm Standby has the **lowest RTO** of all manual DR strategies — the environment is already running, recovery is just a scale-up
+- **RPO is zero** — the DB was promoted from a live replica before the disaster, so no data was lost
+- The key difference from Pilot Light is that **no promotion or task definition update is needed during recovery** — everything is pre-configured and running
+- Higher cost than Pilot Light due to the **always-on promoted DB and running ECS tasks**
+- In production, the scale-up step would be **automated via CloudWatch alarms or Route 53 health checks**, reducing RTO to near zero
+
+---
+
+## Strategy Comparison So Far
+
+| Strategy | RTO | RPO | Cost | Operational Effort | Best For |
+|----------|-----|-----|------|--------------------|----------|
+| Backup and Restore | ~30–45 min | Time since last snapshot | Lowest | High — manual snapshot, restore, and redeployment | Non-critical workloads |
+| Pilot Light | ~15–30 min | ~0 | Medium | Medium — replica promotion and task definition update required | Moderate criticality workloads |
+| Warm Standby | ~2–5 min | ~0 | Higher | Low — single scale-up command | Business-critical workloads |
+
+---
+
+---
+
+#### Strategy 4: Multi-Site Active/Active
+
+The Multi-Site Active/Active strategy runs **fully independent application and database stacks in both regions simultaneously**. Traffic is distributed across both regions using **Route 53 weighted routing with health checks**. When one region fails, Route 53 automatically removes it from DNS and routes 100% of traffic to the surviving region — with no manual intervention required.
+
+This is the highest availability DR strategy, with the lowest possible RTO.
+
+---
+
+## Architecture
+
+```
+Internet
+│
+▼
+Route 53 (Weighted Routing + Health Checks)
+├── 50% → Primary ALB (us-east-1)
+└── 50% → DR ALB (us-west-2)
+```
+
+Both regions run independent:
+- ECS Fargate services
+- RDS PostgreSQL instances
+- Application Load Balancers
+
+---
+
+## Simulation Steps
+
+1. Confirmed both primary (us-east-1) and DR (us-west-2) ECS services running at 2 tasks each
+2. Created Route 53 public hosted zone `dr-lab.internal`
+3. Created two weighted CNAME records (50/50) for `app.dr-lab.internal` — one per ALB — each associated with a Route 53 health check
+4. Seeded DR region independently: `active-active-dr-item-1`, `active-active-dr-item-2`
+5. Seeded primary region independently: `active-active-primary-item-1`, `active-active-primary-item-2`
+6. Confirmed both regions accepting writes simultaneously — active/active state established
+7. Scaled primary ECS to 0 — simulating a regional disaster
+8. Observed Route 53 health check transition: all 16 global checkers reported `Failure` within ~60 seconds
+9. Verified DR ALB continued serving traffic with no manual intervention
+10. Scaled primary ECS back to 2 — Route 53 health checks returned `Success` and primary was automatically reintroduced into rotation
+
+---
+
+## Recovery Verification
+
+During primary failure, the DR endpoint returned:
+
+```json
+[[2,"active-active-dr-item-2"],[1,"active-active-dr-item-1"]]
+```
+
+This confirmed:
+- DR region served traffic automatically during primary failure ✅
+- No manual DNS changes or intervention required ✅
+- Primary was automatically reintroduced after recovery ✅
+- RTO = Route 53 TTL (~30 seconds) ✅
+
+---
+
+## RTO and RPO Results
+
+| Metric | Value | Notes |
+|--------|-------|-------|
+| **RTO** | ~30 seconds | Route 53 TTL — no human action required |
+| **RPO** | 0 | Each region has its own independent DB — no replication lag |
+
+---
+
+## Recovery Breakdown
+
+| Step | Approximate Duration |
+|------|---------------------|
+| Route 53 health check failure detection | ~30–60 sec |
+| DNS TTL expiry and traffic reroute | ~30 sec |
+| **Total active RTO** | **~30–60 sec** |
+
+---
+
+## Key Observations
+
+- Active/Active has the **lowest RTO of all strategies** — recovery is fully automated via Route 53, no human action needed
+- **RPO is zero** — both regions have independent databases serving live traffic, so no data is lost on failover
+- Route 53 health checks use **16 global checkers** — all must agree on failure before DNS is updated, preventing false positives
+- The key tradeoff is **data consistency** — because each region has an independent database, writes to one region are not visible in the other. This is acceptable for workloads that can tolerate regional data isolation
+- **Self-healing** was demonstrated: after primary recovered, Route 53 automatically reintroduced it into the 50/50 rotation with no manual DNS changes
+- Highest cost of all strategies due to **fully redundant infrastructure running in both regions at all times**
+- In production, this pattern would use **global data replication** (e.g. Aurora Global Database) to keep both databases in sync
+
+---
+
+## Final Strategy Comparison
+
+| Strategy | RTO | RPO | Cost | Operational Effort | Best For |
+|----------|-----|-----|------|--------------------|----------|
+| Backup and Restore | ~30–45 min | Time since last snapshot | Lowest | High — manual snapshot, restore, and redeployment | Non-critical workloads |
+| Pilot Light | ~15–30 min | ~0 | Medium | Medium — replica promotion and task definition update required | Moderate criticality workloads |
+| Warm Standby | ~2–5 min | ~0 | Higher | Low — single scale-up command | Business-critical workloads |
+| Multi-Site Active/Active | ~30–60 sec | 0 | Highest | Minimal — fully automated via Route 53, no human action | Mission-critical workloads |
+
+---
+
+## Next Steps (Upcoming Phases)
+
+Upcoming DR strategies to test and document:
+
 - Multi-AZ database failover
-- Multi-region replication
-- DNS failover strategies
-- Infrastructure rebuild using Terraform
 
 Each experiment will include **measured RTO and RPO results**.
 
