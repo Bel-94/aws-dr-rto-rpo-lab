@@ -4,7 +4,7 @@ This project explores real-world **Disaster Recovery (DR)** strategies on AWS by
 
 The goal is to simulate how modern systems are designed to remain resilient during outages while understanding the architectural decisions behind recovery strategies.
 
-This project is currently **ongoing** and will evolve through multiple phases.
+This project is now **complete**. All four disaster recovery strategies have been implemented, simulated, and documented.
 
 ---
 
@@ -459,8 +459,8 @@ After recovery, the DR endpoint returned:
 ```
 
 This confirmed:
-- Pre-disaster data was successfully recovered ✅
-- Post-snapshot data was lost — as expected with this strategy ✅
+- Pre-disaster data was successfully recovered 
+- Post-snapshot data was lost — as expected with this strategy 
 
 ---
 
@@ -527,9 +527,9 @@ After recovery, the DR endpoint returned:
 ```
 
 This confirmed:
-- All 6 items recovered — including data inserted after the replica was created ✅
-- Zero data loss — continuous replication captured everything ✅
-- RPO = 0 ✅
+- All 6 items recovered — including data inserted after the replica was created 
+- Zero data loss — continuous replication captured everything 
+- RPO = 0 
 
 ---
 
@@ -607,9 +607,9 @@ After scaling up, the DR endpoint returned:
 ```
 
 This confirmed:
-- All 8 items recovered — zero data loss ✅
-- RPO = 0 — DB was already promoted and in sync ✅
-- Recovery required only a single scale-up command ✅
+- All 8 items recovered — zero data loss 
+- RPO = 0 — DB was already promoted and in sync 
+- Recovery required only a single scale-up command 
 
 ---
 
@@ -704,10 +704,10 @@ During primary failure, the DR endpoint returned:
 ```
 
 This confirmed:
-- DR region served traffic automatically during primary failure ✅
-- No manual DNS changes or intervention required ✅
-- Primary was automatically reintroduced after recovery ✅
-- RTO = Route 53 TTL (~30 seconds) ✅
+- DR region served traffic automatically during primary failure 
+- No manual DNS changes or intervention required 
+- Primary was automatically reintroduced after recovery 
+- RTO = Route 53 TTL (~30 seconds) 
 
 ---
 
@@ -753,19 +753,9 @@ This confirmed:
 
 ---
 
-## Next Steps (Upcoming Phases)
-
-Upcoming DR strategies to test and document:
-
-- Multi-AZ database failover
-
-Each experiment will include **measured RTO and RPO results**.
-
----
-
 ## Learning Focus
 
-This project is helping me deepen my understanding of:
+This project helped me deepen my understanding of:
 
 - Cloud architecture
 - Infrastructure as Code
