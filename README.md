@@ -460,7 +460,7 @@ After recovery, the DR endpoint returned:
 
 This confirmed:
 - Pre-disaster data was successfully recovered 
-- Post-snapshot data was lost — as expected with this strategy 
+- Post-snapshot data was lost as expected with this strategy 
 
 ---
 
@@ -486,18 +486,16 @@ This confirmed:
 
 ## Key Observations
 
-- Backup and Restore has the **highest RTO** of all DR strategies — recovery requires manual steps and waiting for RDS to restore
+- Backup and Restore has the **highest RTO** of all DR strategies. Recovery requires manual steps and waiting for RDS to restore
 - **RPO is directly tied to snapshot frequency** — the less frequent the snapshots, the more data is at risk
 - This strategy is best suited for **non-critical workloads** where some downtime and data loss is acceptable
-- All recovery steps were performed manually in this simulation — in production, these would be **automated using scripts or AWS Backup**
-
----
+- All recovery steps were performed manually in this simulation; in production, these would be **automated using scripts or AWS Backup**
 
 ---
 
 #### Strategy 2: Pilot Light
 
-The Pilot Light strategy keeps a minimal version of the environment running in the DR region at all times. A **read replica** of the primary database continuously replicates data, so when disaster strikes, recovery only requires promoting the replica and scaling up the application — no snapshot copy or RDS restore needed.
+The Pilot Light strategy keeps a minimal version of the environment running in the DR region at all times. A **read replica** of the primary database continuously replicates data, so when disaster strikes, recovery only requires promoting the replica and scaling up the application. No snapshot copy or RDS restore needed.
 
 This results in a significantly lower RTO and near-zero RPO compared to Backup and Restore.
 
@@ -527,7 +525,7 @@ After recovery, the DR endpoint returned:
 ```
 
 This confirmed:
-- All 6 items recovered — including data inserted after the replica was created 
+- All 6 items recovered, including data inserted after the replica was created 
 - Zero data loss — continuous replication captured everything 
 - RPO = 0 
 
@@ -556,7 +554,7 @@ This confirmed:
 
 ## Key Observations
 
-- Pilot Light has a **significantly lower RTO** than Backup and Restore — the replica is already running, so no time is spent waiting for an RDS restore
+- Pilot Light has a **significantly lower RTO** than Backup and Restore. The replica is already running, so no time is spent waiting for an RDS restore
 - **RPO is effectively zero** — the read replica replicates continuously, so no data is lost at the point of failure
 - The main networking challenge was that the promoted replica landed in the **default VPC**, while ECS tasks ran in the **Terraform DR VPC** — resolved by moving ECS tasks to public subnets with `assignPublicIp=ENABLED`
 - In production, replica promotion and ECS redeployment would be **automated**, reducing RTO further
@@ -573,11 +571,9 @@ This confirmed:
 
 ---
 
----
-
 #### Strategy 3: Warm Standby
 
-The Warm Standby strategy keeps a **fully functional but scaled-down version** of the application running in the DR region at all times. Unlike Pilot Light, both the application and database are already running — recovery only requires **scaling up** the existing environment.
+The Warm Standby strategy keeps a **fully functional but scaled-down version** of the application running in the DR region at all times. Unlike Pilot Light, both the application and database are already running. Recovery only requires **scaling up** the existing environment.
 
 This results in the lowest RTO of manual DR strategies and zero RPO.
 
@@ -634,7 +630,7 @@ This confirmed:
 
 ## Key Observations
 
-- Warm Standby has the **lowest RTO** of all manual DR strategies — the environment is already running, recovery is just a scale-up
+- Warm Standby has the **lowest RTO** of all manual DR strategies. The environment is already running, recovery is just a scale-up
 - **RPO is zero** — the DB was promoted from a live replica before the disaster, so no data was lost
 - The key difference from Pilot Light is that **no promotion or task definition update is needed during recovery** — everything is pre-configured and running
 - Higher cost than Pilot Light due to the **always-on promoted DB and running ECS tasks**
@@ -652,11 +648,9 @@ This confirmed:
 
 ---
 
----
-
 #### Strategy 4: Multi-Site Active/Active
 
-The Multi-Site Active/Active strategy runs **fully independent application and database stacks in both regions simultaneously**. Traffic is distributed across both regions using **Route 53 weighted routing with health checks**. When one region fails, Route 53 automatically removes it from DNS and routes 100% of traffic to the surviving region — with no manual intervention required.
+The Multi-Site Active/Active strategy runs **fully independent application and database stacks in both regions simultaneously**. Traffic is distributed across both regions using **Route 53 weighted routing with health checks**. When one region fails, Route 53 automatically removes it from DNS and routes 100% of traffic to the surviving region, with no manual intervention required.
 
 This is the highest availability DR strategy, with the lowest possible RTO.
 
